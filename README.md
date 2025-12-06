@@ -228,7 +228,12 @@ CREATE TABLE PAYMENT (
         REFERENCES BILL(bill_id) ON DELETE CASCADE
 );
 ```
-And in this screenshot it indicates that the tables were created in sql developer as they are shown and we used the above sql codes
+And in this screenshot it indicates that the tables were created in sql developer as they are shown and we used the above sql codes to create the tables and the screenshot indicates how many tables that are created in my project and the number of rowa each table contains.
+![table creation phase5](https://github.com/user-attachments/assets/912d2fa9-d909-486a-9eff-d13f355c385d)
+in addition we also have shown some data of one of the tables that we created
+![sample data](https://github.com/user-attachments/assets/52157f0e-dc27-4dbd-a9cf-69ec934dc845)
+
+
 
 
 
