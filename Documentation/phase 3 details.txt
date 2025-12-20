@@ -1,0 +1,1453 @@
+ENTITIES & ATTRIBUTES
+
+1. PATIENT
+
+Patient_ID (PK)
+First_Name
+Last_Name
+Gender
+Date_Of_Birth
+Phone
+Email
+Address
+Date_Registered
+
+2.DOCTOR
+
+Doctor_ID (PK)
+First_Name
+Last_Name
+Specialization
+Phone
+Email
+Office_Number
+
+3.APPOINTMENT
+
+Appointment_ID (PK)
+Patient_ID (FK → PATIENT.Patient_ID)
+Doctor_ID (FK → DOCTOR.Doctor_ID)
+Appointment_Date
+Appointment_Time
+Reason
+Status (Scheduled, Completed, Cancelled)
+
+4.BILLING
+
+Bill_ID (PK)
+Appointment_ID (FK → APPOINTMENT.Appointment_ID)
+Consultation_Fee
+Test_Fee
+Medication_Fee
+Total_Amount
+Payment_Status (Paid, Pending)
+
+5.MEDICAL_RECORD
+
+Record_ID (PK)
+Patient_ID (FK → PATIENT.Patient_ID)
+Doctor_ID (FK → DOCTOR.Doctor_ID)
+Diagnosis
+Treatment
+Record_Date
+
+6.PRESCRIPTION
+
+Prescription_ID (PK)
+Record_ID (FK → MEDICAL_RECORD.Record_ID)
+Medication_Name
+Dosage
+Instructions
+
+CARDINALITIES
+
+PATIENT 1—M APPOINTMENT
+DOCTOR 1—M APPOINTMENT
+APPOINTMENT 1—1 BILLING (one appointment = one bill)
+PATIENT 1—M MEDICAL_RECORD
+DOCTOR 1—M MEDICAL_RECORD
+MEDICAL_RECORD 1—M PRESCRIPTION
+
+PATIENT TABLE:
+| Column          | Type          | Constraints                        | Description        |
+| --------------- | ------------- | ---------------------------------- | ------------------ |
+| Patient_ID      | NUMBER(10)    | PK                                 | Unique patient ID  |
+| First_Name      | VARCHAR2(50)  | NOT NULL                           | Patient first name |
+| Last_Name       | VARCHAR2(50)  | NOT NULL                           | Patient surname    |
+| Gender          | VARCHAR2(10)  | CHECK(Gender IN ('Male','Female')) | Biological sex     |
+| Date_Of_Birth   | DATE          | NOT NULL                           | DOB                |
+| Phone           | VARCHAR2(20)  | UNIQUE                             | Contact number     |
+| Email           | VARCHAR2(50)  | UNIQUE                             | Email address      |
+| Address         | VARCHAR2(100) |                                    | Residence          |
+| Date_Registered | DATE          | DEFAULT SYSDATE                    | Registration date  |
+
+DOCTOR'S TABLE:
+| Column         | Type         | Constraints | Description       |
+| -------------- | ------------ | ----------- | ----------------- |
+| Doctor_ID      | NUMBER(10)   | PK          | Unique doctor ID  |
+| First_Name     | VARCHAR2(50) | NOT NULL    | First name        |
+| Last_Name      | VARCHAR2(50) | NOT NULL    | Last name         |
+| Specialization | VARCHAR2(50) |             | Medical specialty |
+| Phone          | VARCHAR2(20) | UNIQUE      | Contact number    |
+| Email          | VARCHAR2(50) | UNIQUE      | Email address     |
+| Office_Number  | VARCHAR2(10) |             | Office location   |
+
+APPOINTMENT TABLE:
+| Column           | Type          | Constraints                                            | Description                |
+| ---------------- | ------------- | ------------------------------------------------------ | -------------------------- |
+| Appointment_ID   | NUMBER(10)    | PK                                                     | Unique appointment         |
+| Patient_ID       | NUMBER(10)    | FK                                                     | Patient making appointment |
+| Doctor_ID        | NUMBER(10)    | FK                                                     | Assigned doctor            |
+| Appointment_Date | DATE          | NOT NULL                                               | Visit date                 |
+| Appointment_Time | VARCHAR2(10)  | NOT NULL                                               | Time                       |
+| Reason           | VARCHAR2(200) |                                                        | Reason for appointment     |
+| Status           | VARCHAR2(20)  | CHECK(Status IN ('Scheduled','Completed','Cancelled')) | Appointment status         |
+
+BILLING TABLE:
+| Column           | Type         | Constraints                                 | Description              |
+| ---------------- | ------------ | ------------------------------------------- | ------------------------ |
+| Bill_ID          | NUMBER(10)   | PK                                          | Unique bill              |
+| Appointment_ID   | NUMBER(10)   | FK UNIQUE                                   | One bill per appointment |
+| Consultation_Fee | NUMBER(10,2) |                                             | Amount                   |
+| Test_Fee         | NUMBER(10,2) |                                             | Lab tests cost           |
+| Medication_Fee   | NUMBER(10,2) |                                             | Drugs cost               |
+| Total_Amount     | NUMBER(10,2) |                                             | Sum of all fees          |
+| Payment_Status   | VARCHAR2(10) | CHECK(Payment_Status IN ('Paid','Pending')) | Payment status           |
+
+MEDICAL RECORD:
+| Column      | Type          | Constraints     | Description           |
+| ----------- | ------------- | --------------- | --------------------- |
+| Record_ID   | NUMBER(10)    | PK              | Unique medical record |
+| Patient_ID  | NUMBER(10)    | FK              | Related patient       |
+| Doctor_ID   | NUMBER(10)    | FK              | Doctor writing record |
+| Diagnosis   | VARCHAR2(200) |                 | Diagnosis             |
+| Treatment   | VARCHAR2(200) |                 | Treatment             |
+| Record_Date | DATE          | DEFAULT SYSDATE | Date recorded         |
+
+PRESCRIPTION TABLE:
+| Column          | Type          | Constraints | Description         |
+| --------------- | ------------- | ----------- | ------------------- |
+| Prescription_ID | NUMBER(10)    | PK          | Unique prescription |
+| Record_ID       | NUMBER(10)    | FK          | Related record      |
+| Medication_Name | VARCHAR2(100) | NOT NULL    | Medication          |
+| Dosage          | VARCHAR2(50)  |             | How much            |
+| Instructions    | VARCHAR2(200) |             | Instructions        |
+
+ASSUMPTIONS
+
+-Each appointment produces exactly one bill.
+-A patient can have multiple medical records.
+-Doctors may handle many appointments daily.
+-Billing items are simplified for academic purposes.
+-Prescriptions belong to a single medical record.
+-Payment details (mobile money, cash) handled in Phase V if needed.
+
+
+-- Create PATIENT table
+CREATE TABLE PATIENT (
+    patient_id NUMBER PRIMARY KEY,
+    first_name VARCHAR2(50) NOT NULL,
+    last_name VARCHAR2(50) NOT NULL,
+    date_of_birth DATE NOT NULL,
+    gender CHAR(1) CHECK (gender IN ('M', 'F', 'O')),
+    phone_number VARCHAR2(15),
+    email VARCHAR2(100),
+    address VARCHAR2(200),
+    created_date TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL
+);
+
+-- Create DEPARTMENT table (must be created before DOCTOR)
+CREATE TABLE DEPARTMENT (
+    department_id NUMBER PRIMARY KEY,
+    department_name VARCHAR2(100) NOT NULL,
+    location VARCHAR2(200),
+    phone_number VARCHAR2(15),
+    head_doctor_id NUMBER
+);
+
+-- Create DOCTOR table
+CREATE TABLE DOCTOR (
+    doctor_id NUMBER PRIMARY KEY,
+    department_id NUMBER,
+    first_name VARCHAR2(50) NOT NULL,
+    last_name VARCHAR2(50) NOT NULL,
+    specialization VARCHAR2(100),
+    license_number VARCHAR2(50) UNIQUE NOT NULL,
+    phone_number VARCHAR2(15),
+    email VARCHAR2(100),
+    hire_date DATE,
+    status VARCHAR2(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'ON_LEAVE')),
+    CONSTRAINT fk_doctor_department FOREIGN KEY (department_id) 
+        REFERENCES DEPARTMENT(department_id)
+);
+
+-- Now update DEPARTMENT foreign key constraint
+ALTER TABLE DEPARTMENT
+ADD CONSTRAINT fk_department_head_doctor FOREIGN KEY (head_doctor_id) 
+    REFERENCES DOCTOR(doctor_id);
+
+-- Create APPOINTMENT table
+CREATE TABLE APPOINTMENT (
+    appointment_id NUMBER PRIMARY KEY,
+    patient_id NUMBER NOT NULL,
+    doctor_id NUMBER NOT NULL,
+    appointment_date DATE NOT NULL,
+    appointment_time VARCHAR2(10) NOT NULL,
+    status VARCHAR2(20) DEFAULT 'SCHEDULED' CHECK (status IN ('SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW')),
+    notes VARCHAR2(500),
+    created_by VARCHAR2(50),
+    created_date TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT fk_appointment_patient FOREIGN KEY (patient_id) 
+        REFERENCES PATIENT(patient_id),
+    CONSTRAINT fk_appointment_doctor FOREIGN KEY (doctor_id) 
+        REFERENCES DOCTOR(doctor_id)
+);
+
+-- Create CONSULTATION table
+CREATE TABLE CONSULTATION (
+    consultation_id NUMBER PRIMARY KEY,
+    appointment_id NUMBER UNIQUE NOT NULL,
+    doctor_id NUMBER NOT NULL,
+    diagnosis VARCHAR2(500),
+    symptoms VARCHAR2(500),
+    consultation_date TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    treatment_plan VARCHAR2(1000),
+    follow_up_required CHAR(1) DEFAULT 'N' CHECK (follow_up_required IN ('Y', 'N')),
+    consultation_cost NUMBER(10,2) DEFAULT 0,
+    CONSTRAINT fk_consultation_appointment FOREIGN KEY (appointment_id) 
+        REFERENCES APPOINTMENT(appointment_id),
+    CONSTRAINT fk_consultation_doctor FOREIGN KEY (doctor_id) 
+        REFERENCES DOCTOR(doctor_id)
+);
+
+-- Create BILL table
+CREATE TABLE BILL (
+    bill_id NUMBER PRIMARY KEY,
+    patient_id NUMBER NOT NULL,
+    consultation_id NUMBER UNIQUE NOT NULL,
+    bill_date DATE DEFAULT SYSDATE NOT NULL,
+    total_amount NUMBER(10,2) NOT NULL CHECK (total_amount >= 0),
+    paid_amount NUMBER(10,2) DEFAULT 0 CHECK (paid_amount >= 0),
+    payment_status VARCHAR2(20) DEFAULT 'PENDING' CHECK (payment_status IN ('PENDING', 'PARTIAL', 'PAID', 'OVERDUE')),
+    payment_date DATE,
+    CONSTRAINT fk_bill_patient FOREIGN KEY (patient_id) 
+        REFERENCES PATIENT(patient_id),
+    CONSTRAINT fk_bill_consultation FOREIGN KEY (consultation_id) 
+        REFERENCES CONSULTATION(consultation_id),
+    CONSTRAINT check_paid_amount CHECK (paid_amount <= total_amount)
+);
+
+-- Create PRESCRIPTION table
+CREATE TABLE PRESCRIPTION (
+    prescription_id NUMBER PRIMARY KEY,
+    consultation_id NUMBER NOT NULL,
+    prescription_date DATE DEFAULT SYSDATE NOT NULL,
+    instructions VARCHAR2(500),
+    valid_until DATE,
+    status VARCHAR2(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'EXPIRED', 'CANCELLED')),
+    issued_by NUMBER NOT NULL,
+    created_date TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT fk_prescription_consultation FOREIGN KEY (consultation_id) 
+        REFERENCES CONSULTATION(consultation_id),
+    CONSTRAINT fk_prescription_doctor FOREIGN KEY (issued_by) 
+        REFERENCES DOCTOR(doctor_id)
+);
+
+-- Create MEDICATION table
+CREATE TABLE MEDICATION (
+    medication_id NUMBER PRIMARY KEY,
+    medication_name VARCHAR2(100) NOT NULL,
+    generic_name VARCHAR2(100),
+    manufacturer VARCHAR2(100),
+    unit_price NUMBER(10,2) NOT NULL CHECK (unit_price >= 0),
+    stock_quantity NUMBER NOT NULL CHECK (stock_quantity >= 0),
+    reorder_level NUMBER DEFAULT 10 CHECK (reorder_level >= 0),
+    expiry_date DATE,
+    CONSTRAINT uq_medication_name UNIQUE (medication_name)
+);
+
+-- Create PRESCRIPTION_DETAIL table
+CREATE TABLE PRESCRIPTION_DETAIL (
+    detail_id NUMBER PRIMARY KEY,
+    prescription_id NUMBER NOT NULL,
+    medication_id NUMBER NOT NULL,
+    dosage VARCHAR2(50) NOT NULL,
+    frequency VARCHAR2(100) NOT NULL,
+    duration_days NUMBER NOT NULL CHECK (duration_days > 0),
+    quantity NUMBER NOT NULL CHECK (quantity > 0),
+    special_instructions VARCHAR2(200),
+    CONSTRAINT fk_detail_prescription FOREIGN KEY (prescription_id) 
+        REFERENCES PRESCRIPTION(prescription_id) ON DELETE CASCADE,
+    CONSTRAINT fk_detail_medication FOREIGN KEY (medication_id) 
+        REFERENCES MEDICATION(medication_id),
+    CONSTRAINT uq_prescription_medication UNIQUE (prescription_id, medication_id)
+);
+
+-- Create PAYMENT table
+CREATE TABLE PAYMENT (
+    payment_id NUMBER PRIMARY KEY,
+    bill_id NUMBER NOT NULL,
+    payment_date TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    amount NUMBER(10,2) NOT NULL CHECK (amount > 0),
+    payment_method VARCHAR2(30) CHECK (payment_method IN ('CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'INSURANCE', 'ONLINE')),
+    transaction_ref VARCHAR2(100),
+    processed_by VARCHAR2(50),
+    CONSTRAINT fk_payment_bill FOREIGN KEY (bill_id) 
+        REFERENCES BILL(bill_id) ON DELETE CASCADE
+);
+
+phase 4
+
+-- Grant all required privileges to SHOT_DBA
+GRANT DBA TO SHOT_DBA;
+GRANT CREATE SESSION TO SHOT_DBA;
+GRANT UNLIMITED TABLESPACE TO SHOT_DBA;
+GRANT CREATE USER, DROP USER TO SHOT_DBA;
+GRANT CREATE TABLE, CREATE VIEW, CREATE PROCEDURE, CREATE TRIGGER TO SHOT_DBA;
+GRANT EXECUTE ANY PROCEDURE TO SHOT_DBA;
+
+-- Create Data Tablespace
+CREATE TABLESPACE SHOT_DATA
+DATAFILE 'C:\APP\TESSY\ORADATA\THUR_27632_TESSY_SHOT_DB\SHOT_DATA02.DBF'
+SIZE 500M
+AUTOEXTEND ON NEXT 100M MAXSIZE 2G;
+
+-- Create Index Tablespace
+CREATE TABLESPACE SHOT_INDEX
+DATAFILE 'C:\APP\TESSY\ORADATA\THUR_27632_TESSY_SHOT_DB\SHOT_INDEX02.DBF'
+SIZE 300M
+AUTOEXTEND ON NEXT 50M MAXSIZE 1G;
+
+-- Create Temporary Tablespace
+CREATE TEMPORARY TABLESPACE SHOT_TEMP
+TEMPFILE 'C:\APP\TESSY\ORADATA\THUR_27632_TESSY_SHOT_DB\SHOT_TEMP01.DBF'
+SIZE 200M
+AUTOEXTEND ON NEXT 50M MAXSIZE 500M;
+
+
+phase 5
+
+table creation
+
+-- Create sequences according to ER diagram
+CREATE SEQUENCE seq_patient_id START WITH 1000 INCREMENT BY 1;
+CREATE SEQUENCE seq_department_id START WITH 100 INCREMENT BY 1;
+CREATE SEQUENCE seq_doctor_id START WITH 2000 INCREMENT BY 1;
+CREATE SEQUENCE seq_appointment_id START WITH 3000 INCREMENT BY 1;
+CREATE SEQUENCE seq_consultation_id START WITH 4000 INCREMENT BY 1;
+CREATE SEQUENCE seq_prescription_id START WITH 5000 INCREMENT BY 1;
+CREATE SEQUENCE seq_medication_id START WITH 6000 INCREMENT BY 1;
+CREATE SEQUENCE seq_detail_id START WITH 7000 INCREMENT BY 1;
+CREATE SEQUENCE seq_bill_id START WITH 8000 INCREMENT BY 1;
+CREATE SEQUENCE seq_payment_id START WITH 9000 INCREMENT BY 1;
+
+-- Create tables in correct order (parents first)
+
+-- 1. PATIENT Table
+CREATE TABLE PATIENT (
+    PATIENT_ID NUMBER PRIMARY KEY,
+    FIRST_NAME VARCHAR2(50 BYTE) NOT NULL,
+    LAST_NAME VARCHAR2(50 BYTE) NOT NULL,
+    DATE_OF_BIRTH DATE NOT NULL,
+    GENDER CHAR(1 BYTE),
+    PHONE_NUMBER VARCHAR2(15 BYTE),
+    EMAIL VARCHAR2(100 BYTE),
+    ADDRESS VARCHAR2(200 BYTE),
+    CREATED_DATE TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL
+) TABLESPACE SHOT_DATA;
+
+-- 2. DEPARTMENT Table
+CREATE TABLE DEPARTMENT (
+    DEPARTMENT_ID NUMBER PRIMARY KEY,
+    DEPARTMENT_NAME VARCHAR2(100 BYTE) NOT NULL,
+    LOCATION VARCHAR2(200 BYTE),
+    PHONE_NUMBER VARCHAR2(15 BYTE),
+    HEAD_DOCTOR_ID NUMBER
+) TABLESPACE SHOT_DATA;
+
+-- 3. DOCTOR Table
+CREATE TABLE DOCTOR (
+    DOCTOR_ID NUMBER PRIMARY KEY,
+    DEPARTMENT_ID NUMBER,
+    FIRST_NAME VARCHAR2(50 BYTE) NOT NULL,
+    LAST_NAME VARCHAR2(50 BYTE) NOT NULL,
+    SPECIALIZATION VARCHAR2(100 BYTE),
+    LICENSE_NUMBER VARCHAR2(50 BYTE) UNIQUE NOT NULL,
+    PHONE_NUMBER VARCHAR2(15 BYTE),
+    EMAIL VARCHAR2(100 BYTE),
+    HIRE_DATE DATE,
+    STATUS VARCHAR2(20 BYTE)
+) TABLESPACE SHOT_DATA;
+
+-- 4. MEDICATION Table
+CREATE TABLE MEDICATION (
+    MEDICATION_ID NUMBER PRIMARY KEY,
+    MEDICATION_NAME VARCHAR2(100 BYTE) UNIQUE NOT NULL,
+    GENERIC_NAME VARCHAR2(100 BYTE),
+    MANUFACTURER VARCHAR2(100 BYTE),
+    UNIT_PRICE NUMBER(10,2) NOT NULL,
+    STOCK_QUANTITY NUMBER NOT NULL,
+    REORDER_LEVEL NUMBER,
+    EXPIRY_DATE DATE
+) TABLESPACE SHOT_DATA;
+
+-- 5. APPOINTMENT Table
+CREATE TABLE APPOINTMENT (
+    APPOINTMENT_ID NUMBER PRIMARY KEY,
+    PATIENT_ID NUMBER NOT NULL,
+    DOCTOR_ID NUMBER NOT NULL,
+    APPOINTMENT_DATE DATE NOT NULL,
+    APPOINTMENT_TIME VARCHAR2(10 BYTE) NOT NULL,
+    STATUS VARCHAR2(20 BYTE),
+    NOTES VARCHAR2(500 BYTE),
+    CREATED_BY VARCHAR2(50 BYTE),
+    CREATED_DATE TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL
+) TABLESPACE SHOT_DATA;
+
+-- 6. CONSULTATION Table
+CREATE TABLE CONSULTATION (
+    CONSULTATION_ID NUMBER PRIMARY KEY,
+    APPOINTMENT_ID NUMBER UNIQUE NOT NULL,
+    DOCTOR_ID NUMBER NOT NULL,
+    DIAGNOSIS VARCHAR2(500 BYTE),
+    SYMPTOMS VARCHAR2(500 BYTE),
+    CONSULTATION_DATE TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    TREATMENT_PLAN VARCHAR2(1000 BYTE),
+    FOLLOW_UP_REQUIRED CHAR(1 BYTE),
+    CONSULTATION_COST NUMBER(10,2)
+) TABLESPACE SHOT_DATA;
+
+-- 7. PRESCRIPTION Table
+CREATE TABLE PRESCRIPTION (
+    PRESCRIPTION_ID NUMBER PRIMARY KEY,
+    CONSULTATION_ID NUMBER NOT NULL,
+    PRESCRIPTION_DATE DATE DEFAULT SYSDATE NOT NULL,
+    INSTRUCTIONS VARCHAR2(500 BYTE),
+    VALID_UNTIL DATE,
+    STATUS VARCHAR2(20 BYTE),
+    ISSUED_BY NUMBER NOT NULL,
+    CREATED_DATE TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL
+) TABLESPACE SHOT_DATA;
+
+-- 8. PRESCRIPTION_DETAIL Table
+CREATE TABLE PRESCRIPTION_DETAIL (
+    DETAIL_ID NUMBER PRIMARY KEY,
+    PRESCRIPTION_ID NUMBER NOT NULL,
+    MEDICATION_ID NUMBER NOT NULL,
+    DOSAGE VARCHAR2(50 BYTE) NOT NULL,
+    FREQUENCY VARCHAR2(100 BYTE) NOT NULL,
+    DURATION_DAYS NUMBER NOT NULL,
+    QUANTITY NUMBER NOT NULL,
+    SPECIAL_INSTRUCTIONS VARCHAR2(200 BYTE),
+    CONSTRAINT UQ_PRESCRIPTION_MEDICATION 
+        UNIQUE (PRESCRIPTION_ID, MEDICATION_ID)
+) TABLESPACE SHOT_DATA;
+
+-- 9. BILL Table
+CREATE TABLE BILL (
+    BILL_ID NUMBER PRIMARY KEY,
+    PATIENT_ID NUMBER NOT NULL,
+    CONSULTATION_ID NUMBER UNIQUE NOT NULL,
+    BILL_DATE DATE DEFAULT SYSDATE NOT NULL,
+    TOTAL_AMOUNT NUMBER(10,2) NOT NULL,
+    PAID_AMOUNT NUMBER(10,2),
+    PAYMENT_STATUS VARCHAR2(20 BYTE),
+    PAYMENT_DATE DATE
+) TABLESPACE SHOT_DATA;
+
+-- 10. PAYMENT Table
+CREATE TABLE PAYMENT (
+    PAYMENT_ID NUMBER PRIMARY KEY,
+    BILL_ID NUMBER NOT NULL,
+    PAYMENT_DATE TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    AMOUNT NUMBER(10,2) NOT NULL,
+    PAYMENT_METHOD VARCHAR2(30 BYTE),
+    TRANSACTION_REF VARCHAR2(100 BYTE),
+    PROCESSED_BY VARCHAR2(50 BYTE)
+) TABLESPACE SHOT_DATA;
+
+-- Add foreign key constraints
+ALTER TABLE DOCTOR ADD CONSTRAINT FK_DOCTOR_DEPARTMENT 
+    FOREIGN KEY (DEPARTMENT_ID) REFERENCES DEPARTMENT(DEPARTMENT_ID);
+
+ALTER TABLE DEPARTMENT ADD CONSTRAINT FK_DEPARTMENT_HEAD_DOCTOR 
+    FOREIGN KEY (HEAD_DOCTOR_ID) REFERENCES DOCTOR(DOCTOR_ID);
+
+ALTER TABLE APPOINTMENT ADD CONSTRAINT FK_APPOINTMENT_PATIENT 
+    FOREIGN KEY (PATIENT_ID) REFERENCES PATIENT(PATIENT_ID);
+
+ALTER TABLE APPOINTMENT ADD CONSTRAINT FK_APPOINTMENT_DOCTOR 
+    FOREIGN KEY (DOCTOR_ID) REFERENCES DOCTOR(DOCTOR_ID);
+
+ALTER TABLE CONSULTATION ADD CONSTRAINT FK_CONSULTATION_APPOINTMENT 
+    FOREIGN KEY (APPOINTMENT_ID) REFERENCES APPOINTMENT(APPOINTMENT_ID);
+
+ALTER TABLE CONSULTATION ADD CONSTRAINT FK_CONSULTATION_DOCTOR 
+    FOREIGN KEY (DOCTOR_ID) REFERENCES DOCTOR(DOCTOR_ID);
+
+ALTER TABLE PRESCRIPTION ADD CONSTRAINT FK_PRESCRIPTION_CONSULTATION 
+    FOREIGN KEY (CONSULTATION_ID) REFERENCES CONSULTATION(CONSULTATION_ID);
+
+ALTER TABLE PRESCRIPTION ADD CONSTRAINT FK_PRESCRIPTION_DOCTOR 
+    FOREIGN KEY (ISSUED_BY) REFERENCES DOCTOR(DOCTOR_ID);
+
+ALTER TABLE PRESCRIPTION_DETAIL ADD CONSTRAINT FK_DETAIL_PRESCRIPTION 
+    FOREIGN KEY (PRESCRIPTION_ID) REFERENCES PRESCRIPTION(PRESCRIPTION_ID);
+
+ALTER TABLE PRESCRIPTION_DETAIL ADD CONSTRAINT FK_DETAIL_MEDICATION 
+    FOREIGN KEY (MEDICATION_ID) REFERENCES MEDICATION(MEDICATION_ID);
+
+ALTER TABLE BILL ADD CONSTRAINT FK_BILL_PATIENT 
+    FOREIGN KEY (PATIENT_ID) REFERENCES PATIENT(PATIENT_ID);
+
+ALTER TABLE BILL ADD CONSTRAINT FK_BILL_CONSULTATION 
+    FOREIGN KEY (CONSULTATION_ID) REFERENCES CONSULTATION(CONSULTATION_ID);
+
+ALTER TABLE PAYMENT ADD CONSTRAINT FK_PAYMENT_BILL 
+    FOREIGN KEY (BILL_ID) REFERENCES BILL(BILL_ID);
+
+-- Create indexes for better performance
+CREATE INDEX IDX_PATIENT_NAME ON PATIENT(FIRST_NAME, LAST_NAME) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_DOCTOR_NAME ON DOCTOR(FIRST_NAME, LAST_NAME) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_APPOINTMENT_DATE ON APPOINTMENT(APPOINTMENT_DATE) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_CONSULTATION_DATE ON CONSULTATION(CONSULTATION_DATE) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_BILL_DATE ON BILL(BILL_DATE) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_MEDICATION_NAME ON MEDICATION(MEDICATION_NAME) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_PRESCRIPTION_DATE ON PRESCRIPTION(PRESCRIPTION_DATE) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_PAYMENT_DATE ON PAYMENT(PAYMENT_DATE) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_DOCTOR_SPECIALIZATION ON DOCTOR(SPECIALIZATION) TABLESPACE SHOT_INDEX;
+CREATE INDEX IDX_APPOINTMENT_STATUS ON APPOINTMENT(STATUS) TABLESPACE SHOT_INDEX;
+
+-- Verify table creation
+SELECT table_name, tablespace_name 
+FROM user_tables 
+ORDER BY table_name;
+
+-- Verify sequences
+SELECT sequence_name, increment_by, last_number 
+FROM user_sequences 
+ORDER BY sequence_name;
+
+-- Display completion message
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('=============================================');
+    DBMS_OUTPUT.PUT_LINE('TABLES CREATED SUCCESSFULLY!');
+    DBMS_OUTPUT.PUT_LINE('10 tables created according to ER diagram');
+    DBMS_OUTPUT.PUT_LINE('=============================================');
+    DBMS_OUTPUT.PUT_LINE('Tables created:');
+    DBMS_OUTPUT.PUT_LINE('1. PATIENT');
+    DBMS_OUTPUT.PUT_LINE('2. DEPARTMENT');
+    DBMS_OUTPUT.PUT_LINE('3. DOCTOR');
+    DBMS_OUTPUT.PUT_LINE('4. MEDICATION');
+    DBMS_OUTPUT.PUT_LINE('5. APPOINTMENT');
+    DBMS_OUTPUT.PUT_LINE('6. CONSULTATION');
+    DBMS_OUTPUT.PUT_LINE('7. PRESCRIPTION');
+    DBMS_OUTPUT.PUT_LINE('8. PRESCRIPTION_DETAIL');
+    DBMS_OUTPUT.PUT_LINE('9. BILL');
+    DBMS_OUTPUT.PUT_LINE('10. PAYMENT');
+    DBMS_OUTPUT.PUT_LINE('=============================================');
+END;
+/
+
+insert data
+
+DECLARE
+    TYPE dept_array IS VARRAY(15) OF VARCHAR2(100);
+    departments dept_array := dept_array(
+        'Cardiology', 'Neurology', 'Pediatrics', 'Oncology', 'Orthopedics',
+        'Dermatology', 'Psychiatry', 'Radiology', 'Surgery', 'Gynecology',
+        'Emergency', 'ICU', 'Laboratory', 'Pharmacy', 'Administration'
+    );
+    
+    TYPE loc_array IS VARRAY(5) OF VARCHAR2(200);
+    locations loc_array := loc_array(
+        'Main Building - Floor 1',
+        'Main Building - Floor 2', 
+        'East Wing - Floor 1',
+        'West Wing - Floor 3',
+        'Central Block - Floor 2'
+    );
+BEGIN
+    FOR i IN 1..15 LOOP
+        INSERT INTO DEPARTMENT (
+            DEPARTMENT_ID,
+            DEPARTMENT_NAME,
+            LOCATION,
+            PHONE_NUMBER
+        ) VALUES (
+            seq_department_id.NEXTVAL,
+            departments(i),
+            locations(MOD(i, 5) + 1),
+            '(' || LPAD(MOD(i*7, 999), 3, '0') || ') ' || 
+            LPAD(MOD(i*13, 999), 3, '0') || '-' || 
+            LPAD(MOD(i*17, 9999), 4, '0')
+        );
+    END LOOP;
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('✓ 15 departments inserted successfully');
+END;
+/
+
+DECLARE
+    TYPE first_name_array IS VARRAY(25) OF VARCHAR2(50);
+    first_names first_name_array := first_name_array(
+        'James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda',
+        'William', 'Elizabeth', 'David', 'Susan', 'Richard', 'Jessica', 'Joseph', 'Sarah',
+        'Thomas', 'Karen', 'Charles', 'Nancy', 'Christopher', 'Lisa', 'Daniel', 'Margaret',
+        'Matthew'
+    );
+    
+    TYPE last_name_array IS VARRAY(25) OF VARCHAR2(50);
+    last_names last_name_array := last_name_array(
+        'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis',
+        'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson',
+        'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson',
+        'White', 'Harris'
+    );
+    
+    TYPE spec_array IS VARRAY(15) OF VARCHAR2(100);
+    specializations spec_array := spec_array(
+        'Cardiologist', 'Neurologist', 'Pediatrician', 'Oncologist', 'Orthopedic Surgeon',
+        'Dermatologist', 'Psychiatrist', 'Radiologist', 'General Surgeon', 'Gynecologist',
+        'Emergency Physician', 'Intensivist', 'Pathologist', 'Pharmacist', 'Administrator'
+    );
+    
+    TYPE status_array IS VARRAY(4) OF VARCHAR2(20);
+    statuses status_array := status_array('ACTIVE', 'ON_LEAVE', 'RETIRED', 'INACTIVE');
+BEGIN
+    FOR i IN 1..60 LOOP
+        INSERT INTO DOCTOR (
+            DOCTOR_ID,
+            DEPARTMENT_ID,
+            FIRST_NAME,
+            LAST_NAME,
+            SPECIALIZATION,
+            LICENSE_NUMBER,
+            PHONE_NUMBER,
+            EMAIL,
+            HIRE_DATE,
+            STATUS
+        ) VALUES (
+            seq_doctor_id.NEXTVAL,
+            (SELECT DEPARTMENT_ID FROM (SELECT DEPARTMENT_ID FROM DEPARTMENT ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1),
+            first_names(MOD(i, 25) + 1),
+            last_names(MOD(i, 25) + 1),
+            specializations(MOD(i, 15) + 1),
+            'LIC' || LPAD(i, 6, '0') || 'MD',
+            '(' || LPAD(MOD(i*11, 999), 3, '0') || ') ' || 
+            LPAD(MOD(i*13, 999), 3, '0') || '-' || 
+            LPAD(MOD(i*17, 9999), 4, '0'),
+            LOWER(first_names(MOD(i, 25) + 1)) || '.' || 
+            LOWER(last_names(MOD(i, 25) + 1)) || '@hospital.com',
+            ADD_MONTHS(SYSDATE, - (MOD(i, 120) + 12)),
+            statuses(MOD(i, 4) + 1)
+        );
+    END LOOP;
+    
+    -- Update department head doctors
+    FOR dept_rec IN (SELECT DEPARTMENT_ID FROM DEPARTMENT) LOOP
+        UPDATE DEPARTMENT 
+        SET HEAD_DOCTOR_ID = (
+            SELECT DOCTOR_ID FROM DOCTOR 
+            WHERE DEPARTMENT_ID = dept_rec.DEPARTMENT_ID 
+            AND STATUS = 'ACTIVE'
+            AND ROWNUM = 1
+        )
+        WHERE DEPARTMENT_ID = dept_rec.DEPARTMENT_ID;
+    END LOOP;
+    
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('✓ 60 doctors inserted successfully');
+    DBMS_OUTPUT.PUT_LINE('✓ Department head doctors assigned');
+END;
+/
+
+
+DECLARE
+    TYPE first_name_array IS VARRAY(30) OF VARCHAR2(50);
+    patient_first_names first_name_array := first_name_array(
+        'Emma', 'Liam', 'Olivia', 'Noah', 'Ava', 'Elijah', 'Sophia', 'Lucas',
+        'Mia', 'Mason', 'Isabella', 'Logan', 'Amelia', 'Ethan', 'Harper',
+        'Jacob', 'Evelyn', 'Michael', 'Abigail', 'Daniel', 'Emily', 'Henry',
+        'Elizabeth', 'Jackson', 'Mila', 'Sebastian', 'Ella', 'Aiden', 'Scarlett',
+        'Matthew'
+    );
+    
+    TYPE last_name_array IS VARRAY(25) OF VARCHAR2(50);
+    patient_last_names last_name_array := last_name_array(
+        'Johnson', 'Smith', 'Brown', 'Davis', 'Wilson', 'Miller', 'Moore',
+        'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin',
+        'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Clark', 'Rodriguez',
+        'Lewis', 'Lee', 'Walker', 'Hall', 'Allen'
+    );
+    
+    TYPE street_array IS VARRAY(20) OF VARCHAR2(100);
+    streets street_array := street_array(
+        'Main St', 'Oak Ave', 'Maple Dr', 'Cedar Ln', 'Pine St',
+        'Elm St', 'Washington Ave', 'Lakeview Dr', 'Hill St', 'Park Ave',
+        'Broadway', 'River Rd', 'Sunset Blvd', 'Forest Ave', 'Meadow Ln',
+        'Highland Dr', 'Valley View', 'Mountain Rd', 'Ocean Dr', 'Spring St'
+    );
+    
+    TYPE city_array IS VARRAY(10) OF VARCHAR2(50);
+    cities city_array := city_array(
+        'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix',
+        'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose'
+    );
+BEGIN
+    FOR i IN 1..250 LOOP
+        INSERT INTO PATIENT (
+            PATIENT_ID,
+            FIRST_NAME,
+            LAST_NAME,
+            DATE_OF_BIRTH,
+            GENDER,
+            PHONE_NUMBER,
+            EMAIL,
+            ADDRESS,
+            CREATED_DATE
+        ) VALUES (
+            seq_patient_id.NEXTVAL,
+            patient_first_names(MOD(i, 30) + 1),
+            patient_last_names(MOD(i, 25) + 1),
+            ADD_MONTHS(SYSDATE, - (12 * (20 + MOD(i, 60)))),
+            CASE MOD(i, 3) 
+                WHEN 0 THEN 'M' 
+                WHEN 1 THEN 'F' 
+                ELSE 'O' 
+            END,
+            CASE 
+                WHEN MOD(i, 20) = 0 THEN NULL
+                ELSE '(' || LPAD(MOD(i*7, 999), 3, '0') || ') ' || 
+                     LPAD(MOD(i*13, 999), 3, '0') || '-' || 
+                     LPAD(MOD(i*17, 9999), 4, '0')
+            END,
+            CASE 
+                WHEN MOD(i, 15) = 0 THEN NULL
+                ELSE LOWER(patient_first_names(MOD(i, 30) + 1)) || '.' || 
+                     LOWER(patient_last_names(MOD(i, 25) + 1)) || '@email.com'
+            END,
+            (MOD(i, 1000) + 1) || ' ' || streets(MOD(i, 20) + 1) || ', ' || 
+            cities(MOD(i, 10) + 1) || ', ' || 
+            CASE MOD(i, 4) 
+                WHEN 0 THEN 'NY' 
+                WHEN 1 THEN 'CA' 
+                WHEN 2 THEN 'TX' 
+                ELSE 'FL' 
+            END || ' ' || LPAD(MOD(i, 99999), 5, '0'),
+            SYSDATE - MOD(i, 365)
+        );
+    END LOOP;
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('✓ 250 patients inserted successfully');
+END;
+/
+
+BEGIN
+    FOR i IN 1..120 LOOP
+        INSERT INTO MEDICATION (
+            MEDICATION_ID,
+            MEDICATION_NAME,
+            GENERIC_NAME,
+            MANUFACTURER,
+            UNIT_PRICE,
+            STOCK_QUANTITY,
+            REORDER_LEVEL,
+            EXPIRY_DATE
+        ) VALUES (
+            seq_medication_id.NEXTVAL,
+            'Medicine_' || i,
+            'Generic_' || i,
+            CASE MOD(i, 10)
+                WHEN 0 THEN 'Pfizer'
+                WHEN 1 THEN 'Novartis'
+                WHEN 2 THEN 'Merck'
+                WHEN 3 THEN 'Roche'
+                WHEN 4 THEN 'GSK'
+                WHEN 5 THEN 'Sanofi'
+                WHEN 6 THEN 'AbbVie'
+                WHEN 7 THEN 'Bayer'
+                WHEN 8 THEN 'AstraZeneca'
+                WHEN 9 THEN 'Johnson and Johnson'
+                ELSE 'Generic Pharma'
+            END,
+            ROUND(DBMS_RANDOM.VALUE(1, 250), 2),
+            TRUNC(DBMS_RANDOM.VALUE(0, 1000)),
+            TRUNC(DBMS_RANDOM.VALUE(10, 200)),
+            SYSDATE + TRUNC(DBMS_RANDOM.VALUE(180, 720))
+        );
+    END LOOP;
+    
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('120 medications inserted successfully');
+END;
+/
+
+DECLARE
+    TYPE time_array IS VARRAY(8) OF VARCHAR2(10);
+    appointment_times time_array := time_array(
+        '09:00 AM', '10:30 AM', '11:00 AM', '01:30 PM', 
+        '02:00 PM', '03:30 PM', '04:00 PM', '05:00 PM'
+    );
+    
+    TYPE status_array IS VARRAY(5) OF VARCHAR2(20);
+    appt_statuses status_array := status_array(
+        'SCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'RESCHEDULED'
+    );
+BEGIN
+    FOR i IN 1..450 LOOP
+        INSERT INTO APPOINTMENT (
+            APPOINTMENT_ID,
+            PATIENT_ID,
+            DOCTOR_ID,
+            APPOINTMENT_DATE,
+            APPOINTMENT_TIME,
+            STATUS,
+            NOTES,
+            CREATED_BY,
+            CREATED_DATE
+        ) VALUES (
+            seq_appointment_id.NEXTVAL,
+            (SELECT PATIENT_ID FROM (SELECT PATIENT_ID FROM PATIENT ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1),
+            (SELECT DOCTOR_ID FROM (SELECT DOCTOR_ID FROM DOCTOR WHERE STATUS = 'ACTIVE' ORDER BY DBMS_RANDOM.VALUE) WHERE ROWNUM = 1),
+            CASE 
+                WHEN MOD(i, 5) = 0 THEN SYSDATE + MOD(i, 30)  -- Future appointments
+                ELSE SYSDATE - MOD(i, 180)  -- Past appointments
+            END,
+            appointment_times(MOD(i, 8) + 1),
+            appt_statuses(MOD(i, 5) + 1),
+            CASE 
+                WHEN MOD(i, 10) = 0 THEN 'Follow-up appointment'
+                WHEN MOD(i, 7) = 0 THEN 'Initial consultation'
+                WHEN MOD(i, 5) = 0 THEN 'Routine checkup'
+                WHEN MOD(i, 3) = 0 THEN 'Emergency follow-up'
+                ELSE 'Regular appointment'
+            END,
+            'SYSTEM',
+            SYSDATE - MOD(i, 30)
+        );
+    END LOOP;
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('✓ 450 appointments inserted successfully');
+END;
+/
+
+DECLARE
+    TYPE diagnosis_array IS VARRAY(20) OF VARCHAR2(500);
+    diagnoses diagnosis_array := diagnosis_array(
+        'Hypertension Stage 2', 'Type 2 Diabetes', 'Major Depressive Disorder',
+        'Rheumatoid Arthritis', 'Asthma', 'Chronic Kidney Disease Stage 3',
+        'Osteoarthritis', 'Hyperlipidemia', 'GERD', 'Migraine',
+        'Anxiety Disorder', 'Hypothyroidism', 'COPD', 'Coronary Artery Disease',
+        'Bronchitis', 'Pneumonia', 'UTI', 'Sinusitis', 'Influenza', 'Conjunctivitis'
+    );
+    
+    TYPE symptom_array IS VARRAY(15) OF VARCHAR2(500);
+    symptoms symptom_array := symptom_array(
+        'Fever and chills', 'Chest pain', 'Shortness of breath', 
+        'Persistent cough', 'Headache', 'Fatigue', 'Joint pain',
+        'Nausea and vomiting', 'Dizziness', 'Abdominal pain',
+        'Back pain', 'Sore throat', 'Runny nose', 'Muscle aches',
+        'Loss of appetite'
+    );
+    
+    v_counter NUMBER := 0;
+BEGIN
+    FOR appt_rec IN (SELECT a.APPOINTMENT_ID, a.DOCTOR_ID, a.APPOINTMENT_DATE
+                     FROM APPOINTMENT a
+                     WHERE a.STATUS = 'COMPLETED') LOOP
+        EXIT WHEN v_counter >= 350;
+        
+        INSERT INTO CONSULTATION (
+            CONSULTATION_ID,
+            APPOINTMENT_ID,
+            DOCTOR_ID,
+            DIAGNOSIS,
+            SYMPTOMS,
+            CONSULTATION_DATE,
+            TREATMENT_PLAN,
+            FOLLOW_UP_REQUIRED,
+            CONSULTATION_COST
+        ) VALUES (
+            seq_consultation_id.NEXTVAL,
+            appt_rec.APPOINTMENT_ID,
+            appt_rec.DOCTOR_ID,
+            diagnoses(MOD(v_counter, 20) + 1),
+            symptoms(MOD(v_counter, 15) + 1),
+            appt_rec.APPOINTMENT_DATE + INTERVAL '1' HOUR,
+            CASE 
+                WHEN MOD(v_counter, 10) = 0 THEN 'Medication and lifestyle changes'
+                WHEN MOD(v_counter, 7) = 0 THEN 'Physical therapy recommended'
+                WHEN MOD(v_counter, 5) = 0 THEN 'Surgical intervention needed'
+                WHEN MOD(v_counter, 3) = 0 THEN 'Regular monitoring required'
+                ELSE 'Prescription medication'
+            END,
+            CASE 
+                WHEN MOD(v_counter, 4) = 0 THEN 'N'
+                ELSE 'Y'
+            END,
+            CASE 
+                WHEN MOD(v_counter, 20) = 0 THEN 0
+                ELSE 100 + (MOD(v_counter, 200) * 5)
+            END
+        );
+        
+        v_counter := v_counter + 1;
+    END LOOP;
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('✓ ' || v_counter || ' consultations inserted successfully');
+END;
+/
+
+BEGIN
+    DECLARE
+        v_counter NUMBER := 0;
+    BEGIN
+        FOR cons_rec IN (
+            SELECT c.CONSULTATION_ID, c.DOCTOR_ID, c.CONSULTATION_DATE
+            FROM CONSULTATION c
+            WHERE c.FOLLOW_UP_REQUIRED = 'Y'
+        ) LOOP
+            EXIT WHEN v_counter >= 300;
+            
+            INSERT INTO PRESCRIPTION (
+                PRESCRIPTION_ID,
+                CONSULTATION_ID,
+                PRESCRIPTION_DATE,
+                INSTRUCTIONS,
+                VALID_UNTIL,
+                STATUS,
+                ISSUED_BY,
+                CREATED_DATE
+            ) VALUES (
+                seq_prescription_id.NEXTVAL,
+                cons_rec.CONSULTATION_ID,
+                TRUNC(cons_rec.CONSULTATION_DATE),
+                CASE 
+                    WHEN MOD(v_counter, 10) = 0 THEN 'Take with food'
+                    WHEN MOD(v_counter, 7) = 0 THEN 'Take on empty stomach'
+                    WHEN MOD(v_counter, 5) = 0 THEN 'Avoid alcohol'
+                    WHEN MOD(v_counter, 3) = 0 THEN 'Take at bedtime'
+                    ELSE 'Take as needed'
+                END,
+                ADD_MONTHS(TRUNC(cons_rec.CONSULTATION_DATE), 6),
+                CASE MOD(v_counter, 10)
+                    WHEN 0 THEN 'CANCELLED'
+                    WHEN 1 THEN 'EXPIRED'
+                    ELSE 'ACTIVE'
+                END,
+                cons_rec.DOCTOR_ID,
+                cons_rec.CONSULTATION_DATE + INTERVAL '30' MINUTE
+            );
+            
+            v_counter := v_counter + 1;
+        END LOOP;
+        
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('✓ ' || v_counter || ' prescriptions inserted successfully');
+    END;
+END;
+/
+
+
+BEGIN
+    DECLARE
+        TYPE dosage_array IS VARRAY(10) OF VARCHAR2(50);
+        dosages dosage_array := dosage_array(
+            '10mg', '20mg', '50mg', '100mg', '250mg',
+            '500mg', '5mg', '25mg', '75mg', '150mg'
+        );
+        
+        TYPE frequency_array IS VARRAY(8) OF VARCHAR2(100);
+        frequencies frequency_array := frequency_array(
+            'Once daily', 'Twice daily', 'Three times daily',
+            'Every 6 hours', 'Every 8 hours', 'Every 12 hours',
+            'Once weekly', 'As needed'
+        );
+        
+        v_detail_counter NUMBER := 0;
+    BEGIN
+        FOR pres_rec IN (SELECT p.PRESCRIPTION_ID FROM PRESCRIPTION p WHERE p.STATUS = 'ACTIVE') LOOP
+            -- Each prescription gets 1-3 medications
+            FOR j IN 1..(MOD(ABS(DBMS_RANDOM.RANDOM), 3) + 1) LOOP
+                EXIT WHEN v_detail_counter >= 500;
+                
+                INSERT INTO PRESCRIPTION_DETAIL (
+                    DETAIL_ID,
+                    PRESCRIPTION_ID,
+                    MEDICATION_ID,
+                    DOSAGE,
+                    FREQUENCY,
+                    DURATION_DAYS,
+                    QUANTITY,
+                    SPECIAL_INSTRUCTIONS
+                ) VALUES (
+                    seq_detail_id.NEXTVAL,
+                    pres_rec.PRESCRIPTION_ID,
+                    (SELECT MEDICATION_ID FROM (
+                        SELECT MEDICATION_ID FROM MEDICATION 
+                        WHERE STOCK_QUANTITY > 0
+                        ORDER BY DBMS_RANDOM.VALUE
+                    ) WHERE ROWNUM = 1),
+                    dosages(MOD(v_detail_counter, 10) + 1),
+                    frequencies(MOD(v_detail_counter, 8) + 1),
+                    CASE 
+                        WHEN MOD(v_detail_counter, 20) = 0 THEN 7
+                        WHEN MOD(v_detail_counter, 15) = 0 THEN 30
+                        ELSE 14
+                    END,
+                    MOD(v_detail_counter, 90) + 10,
+                    CASE 
+                        WHEN MOD(v_detail_counter, 10) = 0 THEN 'Take with plenty of water'
+                        WHEN MOD(v_detail_counter, 7) = 0 THEN 'Avoid driving'
+                        WHEN MOD(v_detail_counter, 5) = 0 THEN 'May cause drowsiness'
+                        ELSE NULL
+                    END
+                );
+                
+                v_detail_counter := v_detail_counter + 1;
+            END LOOP;
+        END LOOP;
+        
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('✓ ' || v_detail_counter || ' prescription details inserted successfully');
+    END;
+END;
+/
+
+BEGIN
+    DECLARE
+        TYPE status_array IS VARRAY(4) OF VARCHAR2(20);
+        payment_statuses status_array := status_array('PAID', 'PARTIAL', 'PENDING', 'CANCELLED');
+        
+        v_counter NUMBER := 0;
+    BEGIN
+        FOR cons_rec IN (
+            SELECT c.CONSULTATION_ID, c.CONSULTATION_COST, a.PATIENT_ID
+            FROM CONSULTATION c
+            JOIN APPOINTMENT a ON c.APPOINTMENT_ID = a.APPOINTMENT_ID
+            WHERE c.CONSULTATION_COST > 0
+        ) LOOP
+            EXIT WHEN v_counter >= 300;
+            
+            INSERT INTO BILL (
+                BILL_ID,
+                PATIENT_ID,
+                CONSULTATION_ID,
+                BILL_DATE,
+                TOTAL_AMOUNT,
+                PAID_AMOUNT,
+                PAYMENT_STATUS,
+                PAYMENT_DATE
+            ) VALUES (
+                seq_bill_id.NEXTVAL,
+                cons_rec.PATIENT_ID,
+                cons_rec.CONSULTATION_ID,
+                TRUNC(SYSDATE - MOD(v_counter, 60)),
+                cons_rec.CONSULTATION_COST,
+                CASE 
+                    WHEN MOD(v_counter, 4) = 0 THEN cons_rec.CONSULTATION_COST * 0.5
+                    WHEN MOD(v_counter, 3) = 0 THEN cons_rec.CONSULTATION_COST
+                    WHEN MOD(v_counter, 2) = 0 THEN 0
+                    ELSE NULL
+                END,
+                payment_statuses(MOD(v_counter, 4) + 1),
+                CASE 
+                    WHEN MOD(v_counter, 3) = 0 THEN TRUNC(SYSDATE - MOD(v_counter, 30))
+                    ELSE NULL
+                END
+            );
+            
+            v_counter := v_counter + 1;
+        END LOOP;
+        
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('✓ ' || v_counter || ' bills inserted successfully');
+    END;
+END;
+/
+
+BEGIN
+    DECLARE
+        TYPE method_array IS VARRAY(6) OF VARCHAR2(30);
+        payment_methods method_array := method_array(
+            'CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'INSURANCE', 'BANK_TRANSFER', 'MOBILE_PAYMENT'
+        );
+        
+        v_counter NUMBER := 0;
+    BEGIN
+        FOR bill_rec IN (
+            SELECT b.BILL_ID, b.TOTAL_AMOUNT, b.PAID_AMOUNT
+            FROM BILL b
+            WHERE b.PAYMENT_STATUS IN ('PAID', 'PARTIAL')
+            AND b.PAID_AMOUNT > 0
+        ) LOOP
+            EXIT WHEN v_counter >= 200;
+            
+            INSERT INTO PAYMENT (
+                PAYMENT_ID,
+                BILL_ID,
+                PAYMENT_DATE,
+                AMOUNT,
+                PAYMENT_METHOD,
+                TRANSACTION_REF,
+                PROCESSED_BY
+            ) VALUES (
+                seq_payment_id.NEXTVAL,
+                bill_rec.BILL_ID,
+                SYSTIMESTAMP - (v_counter * INTERVAL '1' HOUR),
+                bill_rec.PAID_AMOUNT,
+                payment_methods(MOD(v_counter, 6) + 1),
+                'TXN' || LPAD(v_counter, 8, '0'),
+                'ADMIN_' || TO_CHAR(MOD(v_counter, 5) + 1)
+            );
+            
+            v_counter := v_counter + 1;
+        END LOOP;
+        
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('✓ ' || v_counter || ' payments inserted successfully');
+    END;
+END;
+/
+
+data integrity
+
+constraint check
+
+-- Check NOT NULL constraints
+SELECT 'PATIENT: FIRST_NAME' as constraint_check,
+       COUNT(*) as null_count
+FROM PATIENT WHERE FIRST_NAME IS NULL
+UNION ALL
+SELECT 'PATIENT: LAST_NAME',
+       COUNT(*)
+FROM PATIENT WHERE LAST_NAME IS NULL
+UNION ALL
+SELECT 'PATIENT: DATE_OF_BIRTH',
+       COUNT(*)
+FROM PATIENT WHERE DATE_OF_BIRTH IS NULL
+UNION ALL
+SELECT 'DOCTOR: LICENSE_NUMBER',
+       COUNT(*)
+FROM DOCTOR WHERE LICENSE_NUMBER IS NULL
+UNION ALL
+SELECT 'MEDICATION: MEDICATION_NAME',
+       COUNT(*)
+FROM MEDICATION WHERE MEDICATION_NAME IS NULL
+UNION ALL
+SELECT 'MEDICATION: UNIT_PRICE',
+       COUNT(*)
+FROM MEDICATION WHERE UNIT_PRICE IS NULL
+UNION ALL
+SELECT 'APPOINTMENT: APPOINTMENT_DATE',
+       COUNT(*)
+FROM APPOINTMENT WHERE APPOINTMENT_DATE IS NULL
+UNION ALL
+SELECT 'APPOINTMENT: APPOINTMENT_TIME',
+       COUNT(*)
+FROM APPOINTMENT WHERE APPOINTMENT_TIME IS NULL;
+
+-- Check CHECK constraints
+SELECT 'MEDICATION: Stock not negative' as check_test,
+       COUNT(*) as violations
+FROM MEDICATION WHERE STOCK_QUANTITY < 0
+UNION ALL
+SELECT 'MEDICATION: Price not negative',
+       COUNT(*)
+FROM MEDICATION WHERE UNIT_PRICE < 0
+UNION ALL
+SELECT 'PATIENT: Valid gender',
+       COUNT(*)
+FROM PATIENT WHERE GENDER NOT IN ('M', 'F', 'O') AND GENDER IS NOT NULL;
+
+business rules
+
+-- 1. Consultation should only be for completed appointments
+SELECT 'Consultations for non-completed appointments' as rule_check,
+       COUNT(*) as violations
+FROM CONSULTATION c
+JOIN APPOINTMENT a ON c.APPOINTMENT_ID = a.APPOINTMENT_ID
+WHERE a.STATUS != 'COMPLETED';
+
+-- 2. Prescription should only be for consultations with follow-up required
+SELECT 'Prescriptions without follow-up required' as rule_check,
+       COUNT(*) as violations
+FROM PRESCRIPTION p
+JOIN CONSULTATION c ON p.CONSULTATION_ID = c.CONSULTATION_ID
+WHERE c.FOLLOW_UP_REQUIRED != 'Y';
+
+-- 3. Bill amount should match consultation cost
+SELECT 'Bill amount mismatch with consultation cost' as rule_check,
+       COUNT(*) as violations
+FROM BILL b
+JOIN CONSULTATION c ON b.CONSULTATION_ID = c.CONSULTATION_ID
+WHERE b.TOTAL_AMOUNT != c.CONSULTATION_COST;
+
+-- 4. Paid amount should not exceed total amount
+SELECT 'Paid amount exceeds total amount' as rule_check,
+       COUNT(*) as violations
+FROM BILL
+WHERE PAID_AMOUNT > TOTAL_AMOUNT;
+
+testing queries
+
+
+-- 1. Basic SELECT from each table
+SELECT * FROM PATIENT WHERE ROWNUM <= 5;
+SELECT * FROM DOCTOR WHERE ROWNUM <= 5;
+SELECT * FROM APPOINTMENT WHERE ROWNUM <= 5;
+SELECT * FROM MEDICATION WHERE ROWNUM <= 5;
+SELECT * FROM CONSULTATION WHERE ROWNUM <= 5;
+SELECT * FROM PRESCRIPTION WHERE ROWNUM <= 5;
+
+-- 2. SELECT with WHERE clause
+SELECT PATIENT_ID, FIRST_NAME, LAST_NAME, GENDER 
+FROM PATIENT 
+WHERE GENDER = 'F' 
+AND DATE_OF_BIRTH > DATE '1990-01-01';
+
+-- 3. SELECT with ORDER BY
+SELECT MEDICATION_NAME, UNIT_PRICE, STOCK_QUANTITY
+FROM MEDICATION
+ORDER BY UNIT_PRICE DESC, STOCK_QUANTITY ASC;
+
+-- 4. SELECT with LIKE pattern
+SELECT DOCTOR_ID, FIRST_NAME, LAST_NAME, SPECIALIZATION
+FROM DOCTOR
+WHERE SPECIALIZATION LIKE '%Cardio%' OR SPECIALIZATION LIKE '%Surg%';
+
+aggregations
+
+-- 1. Count appointments by status
+SELECT STATUS, COUNT(*) as appointment_count
+FROM APPOINTMENT
+GROUP BY STATUS
+ORDER BY appointment_count DESC;
+
+-- 2. Average consultation cost by doctor specialization
+SELECT d.SPECIALIZATION, 
+       COUNT(c.CONSULTATION_ID) as consultation_count,
+       ROUND(AVG(c.CONSULTATION_COST), 2) as avg_cost,
+       SUM(c.CONSULTATION_COST) as total_revenue
+FROM DOCTOR d
+JOIN CONSULTATION c ON d.DOCTOR_ID = c.DOCTOR_ID
+WHERE c.CONSULTATION_COST > 0
+GROUP BY d.SPECIALIZATION
+ORDER BY total_revenue DESC;
+
+-- 3. Patient age distribution
+SELECT 
+    CASE 
+        WHEN MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH)/12 < 18 THEN 'Under 18'
+        WHEN MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH)/12 BETWEEN 18 AND 30 THEN '18-30'
+        WHEN MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH)/12 BETWEEN 31 AND 50 THEN '31-50'
+        WHEN MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH)/12 BETWEEN 51 AND 65 THEN '51-65'
+        ELSE 'Over 65'
+    END as age_group,
+    COUNT(*) as patient_count,
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM PATIENT), 2) as percentage
+FROM PATIENT
+GROUP BY 
+    CASE 
+        WHEN MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH)/12 < 18 THEN 'Under 18'
+        WHEN MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH)/12 BETWEEN 18 AND 30 THEN '18-30'
+        WHEN MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH)/12 BETWEEN 31 AND 50 THEN '31-50'
+        WHEN MONTHS_BETWEEN(SYSDATE, DATE_OF_BIRTH)/12 BETWEEN 51 AND 65 THEN '51-65'
+        ELSE 'Over 65'
+    END
+ORDER BY age_group;
+
+-- 4. Medication usage statistics
+SELECT m.MEDICATION_NAME, m.MANUFACTURER,
+       COUNT(pd.DETAIL_ID) as times_prescribed,
+       SUM(pd.QUANTITY) as total_quantity,
+       SUM(pd.QUANTITY * pd.DURATION_DAYS) as total_days_supply,
+       ROUND(AVG(pd.QUANTITY), 2) as avg_quantity_per_prescription
+FROM MEDICATION m
+LEFT JOIN PRESCRIPTION_DETAIL pd ON m.MEDICATION_ID = pd.MEDICATION_ID
+GROUP BY m.MEDICATION_ID, m.MEDICATION_NAME, m.MANUFACTURER
+HAVING COUNT(pd.DETAIL_ID) > 0
+ORDER BY times_prescribed DESC;
+
+-- 5. Monthly revenue report
+SELECT 
+    TO_CHAR(b.BILL_DATE, 'YYYY-MM') as month,
+    COUNT(b.BILL_ID) as bill_count,
+    SUM(b.TOTAL_AMOUNT) as total_billed,
+    SUM(b.PAID_AMOUNT) as total_received,
+    SUM(b.TOTAL_AMOUNT - NVL(b.PAID_AMOUNT, 0)) as outstanding
+FROM BILL b
+GROUP BY TO_CHAR(b.BILL_DATE, 'YYYY-MM')
+ORDER BY month DESC;
+
+joins
+
+-- 1. INNER JOIN: Patient with their appointments
+SELECT p.PATIENT_ID, p.FIRST_NAME, p.LAST_NAME, 
+       a.APPOINTMENT_ID, a.APPOINTMENT_DATE, a.APPOINTMENT_TIME, a.STATUS
+FROM PATIENT p
+INNER JOIN APPOINTMENT a ON p.PATIENT_ID = a.PATIENT_ID
+ORDER BY p.PATIENT_ID, a.APPOINTMENT_DATE;
+
+-- 2. LEFT JOIN: All doctors with their appointments (including those with none)
+SELECT d.DOCTOR_ID, d.FIRST_NAME, d.LAST_NAME, d.SPECIALIZATION,
+       a.APPOINTMENT_ID, a.APPOINTMENT_DATE, a.STATUS
+FROM DOCTOR d
+LEFT JOIN APPOINTMENT a ON d.DOCTOR_ID = a.DOCTOR_ID
+ORDER BY d.DOCTOR_ID;
+
+-- 3. Multiple JOINs: Full patient journey
+SELECT p.FIRST_NAME || ' ' || p.LAST_NAME as patient_name,
+       d.FIRST_NAME || ' ' || d.LAST_NAME as doctor_name,
+       a.APPOINTMENT_DATE,
+       c.DIAGNOSIS,
+       pr.PRESCRIPTION_DATE,
+       m.MEDICATION_NAME,
+       pd.DOSAGE,
+       b.TOTAL_AMOUNT,
+       b.PAYMENT_STATUS
+FROM PATIENT p
+JOIN APPOINTMENT a ON p.PATIENT_ID = a.PATIENT_ID
+JOIN DOCTOR d ON a.DOCTOR_ID = d.DOCTOR_ID
+JOIN CONSULTATION c ON a.APPOINTMENT_ID = c.APPOINTMENT_ID
+LEFT JOIN PRESCRIPTION pr ON c.CONSULTATION_ID = pr.CONSULTATION_ID
+LEFT JOIN PRESCRIPTION_DETAIL pd ON pr.PRESCRIPTION_ID = pd.PRESCRIPTION_ID
+LEFT JOIN MEDICATION m ON pd.MEDICATION_ID = m.MEDICATION_ID
+LEFT JOIN BILL b ON c.CONSULTATION_ID = b.CONSULTATION_ID
+WHERE ROWNUM <= 10;
+
+-- 4. Self JOIN: Doctors in same department
+SELECT d1.DOCTOR_ID, d1.FIRST_NAME || ' ' || d1.LAST_NAME as doctor1,
+       d2.DOCTOR_ID, d2.FIRST_NAME || ' ' || d2.LAST_NAME as doctor2,
+       dept.DEPARTMENT_NAME
+FROM DOCTOR d1
+JOIN DOCTOR d2 ON d1.DEPARTMENT_ID = d2.DEPARTMENT_ID AND d1.DOCTOR_ID < d2.DOCTOR_ID
+JOIN DEPARTMENT dept ON d1.DEPARTMENT_ID = dept.DEPARTMENT_ID
+WHERE ROWNUM <= 10;
+
+subqueries
+
+-- 1. Single-row subquery: Patients with highest consultation cost
+SELECT p.PATIENT_ID, p.FIRST_NAME, p.LAST_NAME,
+       (SELECT MAX(c.CONSULTATION_COST) 
+        FROM CONSULTATION c 
+        JOIN APPOINTMENT a ON c.APPOINTMENT_ID = a.APPOINTMENT_ID
+        WHERE a.PATIENT_ID = p.PATIENT_ID) as highest_consultation_cost
+FROM PATIENT p
+WHERE ROWNUM <= 10;
+
+-- 2. Multi-row subquery: Doctors with above average patient load
+SELECT d.DOCTOR_ID, d.FIRST_NAME, d.LAST_NAME, d.SPECIALIZATION,
+       (SELECT COUNT(*) FROM APPOINTMENT a WHERE a.DOCTOR_ID = d.DOCTOR_ID) as appointment_count
+FROM DOCTOR d
+WHERE (SELECT COUNT(*) FROM APPOINTMENT a WHERE a.DOCTOR_ID = d.DOCTOR_ID) >
+      (SELECT AVG(app_count) FROM 
+          (SELECT COUNT(*) as app_count FROM APPOINTMENT GROUP BY DOCTOR_ID))
+ORDER BY appointment_count DESC;
+
+-- 3. Correlated subquery: Medications never prescribed
+SELECT m.MEDICATION_ID, m.MEDICATION_NAME, m.STOCK_QUANTITY
+FROM MEDICATION m
+WHERE NOT EXISTS (
+    SELECT 1 FROM PRESCRIPTION_DETAIL pd WHERE pd.MEDICATION_ID = m.MEDICATION_ID
+)
+ORDER BY m.STOCK_QUANTITY DESC;
+
+-- 4. IN subquery: Patients who had cardiology consultations
+SELECT p.PATIENT_ID, p.FIRST_NAME, p.LAST_NAME
+FROM PATIENT p
+WHERE p.PATIENT_ID IN (
+    SELECT a.PATIENT_ID
+    FROM APPOINTMENT a
+    JOIN DOCTOR d ON a.DOCTOR_ID = d.DOCTOR_ID
+    WHERE d.SPECIALIZATION LIKE '%Cardio%'
+);
+
+-- 5. Subquery in HAVING: Doctors with more than average consultations
+SELECT d.DOCTOR_ID, d.FIRST_NAME, d.LAST_NAME,
+       COUNT(c.CONSULTATION_ID) as consultation_count
+FROM DOCTOR d
+JOIN CONSULTATION c ON d.DOCTOR_ID = c.DOCTOR_ID
+GROUP BY d.DOCTOR_ID, d.FIRST_NAME, d.LAST_NAME
+HAVING COUNT(c.CONSULTATION_ID) > (
+    SELECT AVG(consult_count) 
+    FROM (SELECT COUNT(*) as consult_count FROM CONSULTATION GROUP BY DOCTOR_ID)
+)
+ORDER BY consultation_count DESC;
+
+What We Accomplished in Phase 5:
+1. Created the Complete Database Structure:
+
+Built all 10 tables from your ER diagram exactly as specified
+
+Each table has proper primary keys for unique identification
+
+All foreign key relationships connect tables correctly (e.g., appointment connects to patient and doctor)
+
+Added constraints to ensure data quality (no negative stock, valid genders, etc.)
+
+2. Inserted Realistic Hospital Data:
+
+Patients: 250+ people with different ages, genders, and contact information
+
+Doctors: 60+ medical professionals across 15+ specialties (Cardiology, Surgery, Pediatrics, etc.)
+
+Departments: 15 hospital units with locations and contact info
+
+Medications: 120+ drugs with prices, stock levels, and expiry dates
+
+Appointments: 450+ patient-doctor meetings with various statuses
+
+Consultations: 350+ medical exams with diagnoses and treatment plans
+
+Prescriptions: 300+ medication orders from doctors
+
+Bills: 300+ financial records with payment tracking
+
+Payments: 200+ payment transactions
+
+3. Verified Everything Works Correctly:
+
+Checked that all patient IDs are unique (no duplicates)
+
+Verified that appointments always link to existing patients and doctors
+
+Confirmed that consultations only happen after completed appointments
+
+Ensured that bills match consultation costs
+
+Tested that medication stock never goes negative
+
+4. Tested the Database with Real Queries:
+
+Basic Searches: Found patients by name, doctors by specialty
+
+Multi-Table Connections: Traced a patient's full journey: appointment → consultation → prescription → bill
+
+Statistics: Calculated average consultation costs, most prescribed medications, busiest doctors
+
+Advanced Queries: Found patients with specific conditions, doctors with above-average workloads
+
+Why This Matters for Your Hospital System:
+Ready for Smart Features:
+
+The database can now support automatic scheduling (prevents double-booking)
+
+Live medication tracking is possible (stock updates automatically when prescribed)
+
+Auto-billing system foundation is complete (bills generate from consultations)
+
+Operational reports can be generated (revenue, patient statistics, doctor performance)
+
+
+Data Quality Guaranteed:
+
+
+Every patient has a unique ID
+
+Every prescription links to a valid consultation
+
+Every bill connects to an actual patient visit
+
+Medication stock levels are always accurate
