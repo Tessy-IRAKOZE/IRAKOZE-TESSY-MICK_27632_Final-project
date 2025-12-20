@@ -233,6 +233,77 @@ And in this screenshot it indicates that the tables were created in sql develope
 in addition we also have shown some data of one of the tables that we created
 ![sample data](https://github.com/user-attachments/assets/52157f0e-dc27-4dbd-a9cf-69ec934dc845)
 
+ ## PhaseVI: Database Interaction and Transactions ##
+
+ ***Triggers***                            
+
+In this phase i created 5+ functions and 5+ procedures with indicating the explicit cursors and also involving window functions such as ROW NUMBER(), RANK(), and many others and in this phase also i was able to create some packages(specifications and body)also error handling was implemented including some bulk operations for optimization. And the screenshot below indicates all what has been done in this phase in summary.
+![phase6 completion](https://github.com/user-attachments/assets/e5186ac7-4511-497f-b737-0f9caf5b91a8)
+![testfunction](https://github.com/user-attachments/assets/d3941c47-f050-4873-8480-f4395cd32c97)
+![test1](https://github.com/user-attachments/assets/97a5bb63-bb91-4367-a74e-f0249910fecd)
+![cursors and window functions](https://github.com/user-attachments/assets/2c492886-e6de-4be1-b83a-9a6c11489e6e)
+![package body phase6](https://github.com/user-attachments/assets/513a71ef-413b-47d2-bda3-bf9217bfa91b)
+
+
+## PhaseVII: Advanced Database Programming and Auditing ##
+
+
+## 1. Problem Statement DevelopmentProblem Statement: ##
+The Hospital Appointment and Management System currently allows unrestricted data manipulation by employees, posing potential risks to data integrity, especially during off-business periods. To improve operational control and data security, the system requires enhanced database logic to automate rules enforcement and track user activity.
+
+Justification for Advanced PL/SQL Features:
+Triggers: Needed to automatically prevent INSERT, UPDATE, or DELETE operations on weekdays and public holidays.
+
+Packages: Useful for grouping related auditing procedures and functions to streamline logic, promote reusability, and centralize audit logic.
+
+Auditing Mechanism: Essential to log sensitive changes (e.g., updates to patient records or billing info) and hold users accountable for actions taken in the system.
+
+Restriction Rules to be Implemented:
+Block any data manipulation (INSERT, UPDATE, DELETE) by employees:
+
+On weekdays (Monday to Friday)
+
+On public holidays in the upcoming month
+
+A static Holidays table will store these public holiday dates.
+
+**RESULT**
+![restriction function](https://github.com/user-attachments/assets/bdd48c70-d5a5-4ade-bc4f-78326cee045d)
+![audit function](https://github.com/user-attachments/assets/721b4c99-0b71-4f54-856a-76a03e90aad7)
+![holiday management table](https://github.com/user-attachments/assets/92e86596-61ec-4064-83c5-86420c677803)
+![test insert on weekday(deny)](https://github.com/user-attachments/assets/81641fc0-c9df-4a0c-9e97-0e730f5cbfc1)
+![trigger allow on weekends](https://github.com/user-attachments/assets/dc6744cf-b7ed-4099-8b22-e0eed9be8a3b)
+![trigger deny on holiday](https://github.com/user-attachments/assets/707629e9-150c-4ace-9835-de55461399db)
+![error messages](https://github.com/user-attachments/assets/78656470-078d-4040-922b-1f5786ac3f01)
+![user info](https://github.com/user-attachments/assets/f43e2b82-cd13-48fa-a95e-8cc888f231d2)
+![phase 7 summary](https://github.com/user-attachments/assets/bb7f0c3e-0198-4c60-aed4-c0fce7f60a0a)
+
+## ***🧪 Technologies Used*** ##
+
+✅ ***Oracle Database 21c***
+✅ PL/SQL
+✅ ***SQL Developer***
+
+## 🙋‍♂️ Contributors ##
+
+## NAME:IRAKOZE TESSY MICK ##
+## Student at Adventist University of Central Africa ##
+## ID: 27632 ##
+## GROUP:D  ##
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
